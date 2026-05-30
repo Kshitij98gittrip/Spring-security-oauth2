@@ -4,12 +4,10 @@ import com.codingshuttle.youtube.hospitalManagement.dto.LoginRequestDto;
 import com.codingshuttle.youtube.hospitalManagement.dto.LoginResponseDto;
 import com.codingshuttle.youtube.hospitalManagement.dto.SignUpResponseDto;
 import com.codingshuttle.youtube.hospitalManagement.dto.SignupRequestDto;
-import com.codingshuttle.youtube.hospitalManagement.entity.AuthProviderType;
-import com.codingshuttle.youtube.hospitalManagement.entity.Patient;
-import com.codingshuttle.youtube.hospitalManagement.entity.User;
-import com.codingshuttle.youtube.hospitalManagement.entity.UserRepository;
+import com.codingshuttle.youtube.hospitalManagement.entity.*;
 import com.codingshuttle.youtube.hospitalManagement.entity.type.RoleType;
 import com.codingshuttle.youtube.hospitalManagement.repository.PatientRepository;
+import com.codingshuttle.youtube.hospitalManagement.repository.RefreshTokenRepository;
 import com.codingshuttle.youtube.hospitalManagement.security.AuthUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +32,16 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PatientRepository patientRepository;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthService(AuthenticationManager authenticationManager, AuthUtil authUtil, UserRepository userRepository, PasswordEncoder passwordEncoder, PatientRepository patientRepository) {
+    public AuthService(AuthenticationManager authenticationManager, AuthUtil authUtil, UserRepository userRepository, PasswordEncoder passwordEncoder, PatientRepository patientRepository, RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.authUtil = authUtil;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.patientRepository = patientRepository;
+
+        this.refreshTokenService = refreshTokenService;
     }
 
 
@@ -54,7 +55,9 @@ public class AuthService {
 
         //To create JWT we need dependencies jjwt
         String token = authUtil.generateAccessToken(user);
-        return new LoginResponseDto(token, user.getId());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
+
+        return new LoginResponseDto(token, user.getId(), refreshToken.getRefreshToken());
     }
 
     public SignUpResponseDto signup(SignupRequestDto dto) {
@@ -121,7 +124,12 @@ public class AuthService {
         }else {
             throw new BadCredentialsException("This email is already exist with provider " + email + "email provider type");
         }
-        LoginResponseDto loginResponseDto = new LoginResponseDto(authUtil.generateAccessToken(user), user.getId());
+        LoginResponseDto loginResponseDto = new LoginResponseDto(authUtil.generateAccessToken(user), user.getId(),null);
         return ResponseEntity.ok(loginResponseDto);
+        }
+
+
+        public String getAccessToken(User user){
+            return authUtil.generateAccessToken(user);
         }
 }

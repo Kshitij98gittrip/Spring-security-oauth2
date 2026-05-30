@@ -3,6 +3,7 @@ package com.codingshuttle.youtube.hospitalManagement.entity;
 import com.codingshuttle.youtube.hospitalManagement.entity.type.RoleType;
 import jakarta.persistence.*;
 import lombok.*;
+import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,6 +42,10 @@ public class User implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     private Set<RoleType> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user")
+    @JsonIgnore
+    private RefreshToken refreshToken;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
